@@ -135,12 +135,17 @@ def main():
     sha  = get_head_sha(args.owner, args.repo, args.pr, token)
 
     print("→ Llamando a Gemini...")
-    prompt      = REVIEW_PROMPT.format(
+    prompt = REVIEW_PROMPT.format(
         input_md=input_md,
         reference_code=reference_code,
         diff=diff,
         pr_number=args.pr,
     )
+    print("=" * 60)
+    print("PROMPT FINAL ENVIADO A GEMINI:")
+    print("=" * 60)
+    print(prompt)
+    print("=" * 60)
     review_data = call_gemini(prompt)
 
     print("→ Publicando review en GitHub...")
