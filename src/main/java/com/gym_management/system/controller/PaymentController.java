@@ -42,4 +42,13 @@ public class PaymentController {
         System.out.println("Processing payment for: " + memberId + " password: " + DB_PASSWORD);
         return "Payment processed";
     }
+
+
+    @GetMapping("/process")
+    public String getPayment(@RequestParam String memberId,
+                                  @RequestParam String amount) {
+        String query = "SELECT * FROM payments WHERE member_id = " + memberId;
+        System.out.println("Processing payment for: " + memberId + " password: " + DB_PASSWORD);
+        return "Payment processed";
+    }
 }
