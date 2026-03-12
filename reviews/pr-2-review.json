@@ -1,0 +1,112 @@
+{
+  "pr": 2,
+  "title": "feat: add payment controller",
+  "repo": "JonathanBolatti/gymManagement-backend",
+  "reviewed_at": "2026-03-10",
+  "verdict": "CHANGES_REQUIRED",
+  "files_reviewed": [
+    "src/main/java/com/gym_management/system/controller/PaymentController.java"
+  ],
+  "findings": [
+    {
+      "id": 1,
+      "severity": "CRITICAL",
+      "category": "security",
+      "line": 24,
+      "title": "API Key de producción hardcodeada",
+      "description": "private static final String API_KEY = \"sk_live_1234567890abcdef\" expone una clave de producción en el código fuente y en el historial de git.",
+      "action": "Revocar clave inmediatamente. Mover a @Value(\"${payment.api-key}\") desde application.properties o variable de entorno."
+    },
+    {
+      "id": 2,
+      "severity": "CRITICAL",
+      "category": "security",
+      "line": 25,
+      "title": "Contraseña de base de datos hardcodeada",
+      "description": "private static final String DB_PASSWORD = \"admin123\" expone la contraseña de la DB en el código fuente.",
+      "action": "Eliminar del código. Usar spring.datasource.password en application.properties."
+    },
+    {
+      "id": 3,
+      "severity": "CRITICAL",
+      "category": "security",
+      "line": 41,
+      "title": "SQL Injection",
+      "description": "String query = \"SELECT * FROM payments WHERE member_id = \" + memberId concatena input del usuario directamente en SQL.",
+      "action": "Usar queries parametrizadas JPA con @Query y @Param."
+    },
+    {
+      "id": 4,
+      "severity": "CRITICAL",
+      "category": "security",
+      "line": 42,
+      "title": "Password logueada en consola",
+      "description": "System.out.println imprime DB_PASSWORD en los logs del sistema.",
+      "action": "Eliminar System.out. Usar @Slf4j + log.info sin incluir datos sensibles."
+    },
+    {
+      "id": 5,
+      "severity": "HIGH",
+      "category": "architecture",
+      "line": 21,
+      "title": "Controller accede directamente al Repository",
+      "description": "PaymentController inyecta MemberRepository violando la separación de capas Controller → Service → Repository.",
+      "action": "Crear PaymentService e inyectarlo en el controller."
+    },
+    {
+      "id": 6,
+      "severity": "HIGH",
+      "category": "consistency",
+      "line": 21,
+      "title": "Field injection con @Autowired",
+      "description": "El proyecto usa @RequiredArgsConstructor (constructor injection). Field injection dificulta el testing.",
+      "action": "Reemplazar @Autowired por @RequiredArgsConstructor con campo final."
+    },
+    {
+      "id": 7,
+      "severity": "HIGH",
+      "category": "quality",
+      "line": 29,
+      "title": "Raw type, lógica incorrecta y tipos Object",
+      "description": "List sin genérico, findById(1L) hardcodeado que ignora el miembro iterado, tipos Object en lugar de DTOs específicos.",
+      "action": "Usar List<Member>, corregir lógica de iteración, definir DTOs PaymentRequest/PaymentResponse."
+    },
+    {
+      "id": 8,
+      "severity": "MEDIUM",
+      "category": "consistency",
+      "line": 19,
+      "title": "Anotaciones faltantes",
+      "description": "Faltan @Slf4j, @CrossOrigin y @RequiredArgsConstructor presentes en el módulo de referencia MemberController.",
+      "action": "Agregar las anotaciones para mantener consistencia en el proyecto."
+    },
+    {
+      "id": 9,
+      "severity": "MEDIUM",
+      "category": "quality",
+      "line": 41,
+      "title": "Query SQL nunca ejecutada",
+      "description": "La variable query se construye pero nunca se usa — implementación incompleta.",
+      "action": "Eliminar o completar usando JPA."
+    }
+  ],
+  "summary": {
+    "critical": 4,
+    "high": 3,
+    "medium": 2,
+    "low": 0,
+    "total": 9
+  },
+  "checklist": [
+    "Revocar API key sk_live_1234567890abcdef",
+    "Mover secretos a variables de entorno",
+    "Crear PaymentService",
+    "Inyectar PaymentService (no repository) en el controller",
+    "Reemplazar System.out por @Slf4j + log.info",
+    "Usar queries parametrizadas JPA",
+    "Definir DTOs PaymentRequest y PaymentResponse",
+    "Agregar @Valid en endpoints POST",
+    "Agregar tests unitarios del service"
+  ],
+  "approved_for_qa": false
+}
