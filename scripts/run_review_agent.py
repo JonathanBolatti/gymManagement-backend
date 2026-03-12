@@ -32,18 +32,18 @@ Analizá el diff considerando: seguridad, consistencia con el módulo de referen
 performance y cobertura de tests.
 
 Respondé ÚNICAMENTE con JSON válido con esta estructura:
-{{
+{
   "inline_comments": [
-    {{
+    {
       "path": "ruta/relativa/al/archivo.java",
       "line": <número de línea exacto en el archivo nuevo, según el diff>,
       "severity": "CRITICAL|HIGH|MEDIUM|LOW",
       "title": "título corto",
       "body": "descripción detallada con código de ejemplo si aplica"
-    }}
+    }
   ],
   "summary": "resumen markdown con veredicto, tabla de hallazgos y checklist"
-}}
+}
 """
 
 
@@ -135,11 +135,12 @@ def main():
     sha  = get_head_sha(args.owner, args.repo, args.pr, token)
 
     print("→ Llamando a Gemini...")
-    prompt = REVIEW_PROMPT.format(
-        input_md=input_md,
-        reference_code=reference_code,
-        diff=diff,
-        pr_number=args.pr,
+    prompt = (
+        REVIEW_PROMPT
+        .replace("{input_md}", input_md)
+        .replace("{reference_code}", reference_code)
+        .replace("{diff}", diff)
+        .replace("{pr_number}", str(args.pr))
     )
     print("=" * 60)
     print("PROMPT FINAL ENVIADO A GEMINI:")
