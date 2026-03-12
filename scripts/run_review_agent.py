@@ -42,7 +42,7 @@ Respondé ÚNICAMENTE con JSON válido con esta estructura:
       "body": "descripción detallada con código de ejemplo si aplica"
     }
   ],
-  "summary": "resumen markdown con veredicto, tabla de hallazgos y checklist"
+  "summary": "STRING en markdown con veredicto, tabla de hallazgos y checklist. DEBE ser un string, no un objeto."
 }
 """
 
@@ -90,9 +90,12 @@ def post_review(owner: str, repo: str, pr: int, sha: str,
         }
         for c in review.get("inline_comments", [])
     ]
+    summary = review.get("summary", "")
+    if not isinstance(summary, str):
+        summary = json.dumps(summary, ensure_ascii=False, indent=2)
     payload = {
         "commit_id": sha,
-        "body":      review.get("summary", ""),
+        "body":      summary,
         "event":     "COMMENT",
         "comments":  comments,
     }
