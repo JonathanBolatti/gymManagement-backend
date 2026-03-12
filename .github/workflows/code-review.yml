@@ -43,12 +43,31 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: generate pr-${{ github.event.pull_request.number }}-input.md [skip ci]"
           git push
 
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
+      - name: Install Claude Code and GitHub MCP server
+        run: npm install -g @anthropic-ai/claude-code @modelcontextprotocol/server-github
+
+      - name: Configure GitHub MCP
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          cat > .mcp.json << EOF
+          {
+            "mcpServers": {
+              "github": {
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-github"],
+                "env": {
+                  "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+                }
+              }
+            }
+          }
+          EOF
 
       - name: Run Code Review Agent
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           claude --print "review PR #${{ github.event.pull_request.number }}" \
             --allowedTools "mcp__github__pull_request_read,mcp__github__pull_request_review_write,mcp__github__add_comment_to_pending_review,Read,Write,Glob,Grep" \
