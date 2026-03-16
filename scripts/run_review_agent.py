@@ -10,41 +10,21 @@ from pathlib import Path
 import google.generativeai as genai
 
 REFERENCE_MODULE = "src/main/java/com/gym_management/system/controller/MemberController.java"
+CLAUDE_MD        = "CLAUDE.md"
+PROMPT_SECTION   = "## Prompt para GitHub Actions"
 
-REVIEW_PROMPT = """\
-Sos un agente de Code Review especializado en Java + Spring Boot.
 
-## Contexto del PR
-{input_md}
-
-## Módulo de referencia (patrones del proyecto)
-```java
-{reference_code}
-```
-
-## Diff del PR #{pr_number}
-```diff
-{diff}
-```
-
-## Tarea
-Analizá el diff considerando: seguridad, consistencia con el módulo de referencia,
-performance y cobertura de tests.
-
-Respondé ÚNICAMENTE con JSON válido con esta estructura:
-{
-  "inline_comments": [
-    {
-      "path": "ruta/relativa/al/archivo.java",
-      "line": <número de línea exacto en el archivo nuevo, según el diff>,
-      "severity": "CRITICAL|HIGH|MEDIUM|LOW",
-      "title": "título corto",
-      "body": "descripción detallada con código de ejemplo si aplica"
-    }
-  ],
-  "summary": "STRING en markdown con veredicto, tabla de hallazgos y checklist. DEBE ser un string, no un objeto."
-}
-"""
+def load_prompt_template() -> str:
+    """Extrae la sección '## Prompt para GitHub Actions' del CLAUDE.md."""
+    claude_md = Path(CLAUDE_MD)
+    if not claude_md.exists():
+        raise FileNotFoundError(f"{CLAUDE_MD} no encontrado. Debe existir en la raíz del repo.")
+    content = claude_md.read_text(encoding="utf-8")
+    start = content.find(PROMPT_SECTION)
+    if start == -1:
+        raise ValueError(f"Sección '{PROMPT_SECTION}' no encontrada en {CLAUDE_MD}.")
+    # Tomar todo desde después del encabezado de la sección
+    return content[start + len(PROMPT_SECTION):].strip()
 
 
 def get_diff(owner: str, repo: str, pr: int, token: str) -> str:
@@ -137,9 +117,12 @@ def main():
     diff = get_diff(args.owner, args.repo, args.pr, token)
     sha  = get_head_sha(args.owner, args.repo, args.pr, token)
 
+    print("→ Cargando prompt desde CLAUDE.md...")
+    template = load_prompt_template()
+
     print("→ Llamando a Gemini...")
     prompt = (
-        REVIEW_PROMPT
+        template
         .replace("{input_md}", input_md)
         .replace("{reference_code}", reference_code)
         .replace("{diff}", diff)
