@@ -1,0 +1,57 @@
+name: Automated Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate pr-N-input.md
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          python scripts/generate_review_input.py \
+            --pr     "${{ github.event.pull_request.number }}" \
+            --branch "${{ github.head_ref }}" \
+            --base   "${{ github.base_ref }}" \
+            --title  "${{ github.event.pull_request.title }}" \
+            --body   "$PR_BODY"
+
+      - name: Commit input.md to repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reviews/pr-${{ github.event.pull_request.number }}-input.md
+          git diff --cached --quiet || git commit -m "chore: generate pr-${{ github.event.pull_request.number }}-input.md [skip ci]"
+          git push
+
+      - name: Install Python dependencies
+        run: pip install google-generativeai requests
+
+      - name: Run Code Review Agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN:   ${{ github.token }}
+        run: |
+          python scripts/run_review_agent.py \
+            --pr    "${{ github.event.pull_request.number }}" \
+            --owner "${{ github.repository_owner }}" \
+            --repo  "${{ github.event.repository.name }}"
