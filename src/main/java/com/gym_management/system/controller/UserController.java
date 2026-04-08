@@ -128,4 +128,13 @@ public class UserController {
         boolean exists = userService.existsByEmail(email);
         return ResponseEntity.ok(exists);
     }
+
+    @GetMapping("/exists/email/{email}/v2")
+    public ResponseEntity<Boolean> existsByEmailV2(@PathVariable String email) {
+        log.info("GET /api/users/exists/email/{} - Verificando email", email);
+        boolean exists = userService.existsByEmail(email);
+        return ResponseEntity.ok(exists);
+    }
+
+
 } 
